@@ -27,7 +27,7 @@ build() {
 genie() {
     pkgdesc="Gesture engine that connects commands to gestures"
     url="https://rmkit.dev/apps/genie"
-    pkgver=0.1.1-1
+    pkgver=0.1.1-2
     section=utils
 
     package() {

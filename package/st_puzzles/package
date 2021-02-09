@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Copyright (c) 2020 The Toltec Contributors
+# SPDX-License-Identifier: MIT
+
+pkgnames=(st_puzzles)
+timestamp=2021-02-07T14:03-08:00
+maintainer=""
+pkgver=0.0.1-1
+license=MIT
+pkgdesc="Simon Tatham's Puzzle Package"
+url="https://github.com/mrichards42/remarkable_puzzles"
+section="games"
+
+
+image=python:v1.1
+source=(
+    https://github.com/mrichards42/remarkable_puzzles/archive/4deee8da6e63176d6e9a420432ec4e0f592075c6.zip
+    st_puzzles.draft
+    toltec.patch
+)
+sha256sums=(
+    b8c2ca8f75fa5e1201778f5179f0526b478f9bb53ac87b3333c3ca0a9eb32124
+    SKIP
+    SKIP
+)
+
+_puzzles_rev=84cb4c6701e027090ff3fd955ce08065e20121b2
+_rmkit_rev=b86bf3d2705b7c2505807f785e43342b39140d78
+_inih_rev=e492a253ec2fb4a60bf68b2c9257f2b9dca759ee
+
+build() {
+    apt update
+    apt install git -y
+    pip3 install okp
+
+    git apply toltec.patch
+
+    # not sure how to correctly fetch the two submodule dependencies of this project
+    # wget https://git.tartarus.org/?p=simon/puzzles.git;a=snapshot;h=${_puzzles_rev};sf=tgz -o puzzles.tar.gz
+    # wget https://github.com/mrichards42/remarkable_puzzles/archive/${_rmkit_rev}.zip
+
+    function clone_repo_at() {
+      dir=$1
+      url=$2
+      sha=$3
+
+      pushd "${dir}"
+      git init
+      git remote add origin ${url}
+      git fetch --depth 1 origin ${sha}
+      git checkout FETCH_HEAD
+      popd
+    }
+
+    # fetch vendor dependencies
+    pushd vendor/
+    clone_repo_at puzzles git://git.tartarus.org/simon/puzzles.git ${_puzzles_rev}
+    clone_repo_at rmkit https://github.com/rmkit-dev/rmkit ${_rmkit_rev}
+    clone_repo_at inih https://github.com/benhoyt/inih ${_inih_rev}
+    popd
+
+    # do the build
+    ARCH=arm BUILD=release make puzzles -r
+}
+
+package() {
+    mkdir -p "$pkgdir"/opt/etc/draft
+    mkdir -p "$pkgdir"/opt/etc/puzzles
+    install -D -m 755 "$srcdir"/build/release/puzzles "$pkgdir"/opt/bin/st_puzzles
+    install -D -m 755 "$srcdir"/st_puzzles.draft "$pkgdir"/opt/etc/draft/
+    install -D -m 644 "$srcdir"/config/* -t "$pkgdir"/opt/etc/puzzles/config/
+    install -D -m 644 "$srcdir"/help/* -t "$pkgdir"/opt/etc/puzzles/help/
+    install -D -m 644 "$srcdir"/icons/* -t "$pkgdir"/opt/etc/puzzles/icons/
+}

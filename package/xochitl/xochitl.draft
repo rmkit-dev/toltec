@@ -1,8 +1,0 @@
-# Copyright (c) 2020 The Toltec Contributors
-# SPDX-License-Identifier: MIT
-
-name=xochitl
-desc=Read documents and take notes
-call=/usr/bin/xochitl
-term=killall xochitl
-imgFile=xochitl
